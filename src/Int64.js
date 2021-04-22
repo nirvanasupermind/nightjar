@@ -2,7 +2,8 @@
 //Usage permitted under terms of MIT License
 
 //CONSTANTS
-var hex_digits = "0123456789abcdef";
+var hex2bin = {"0":["0","0","0","0"],"1":["0","0","0","1"],"2":["0","0","1","0"],"3":["0","0","1","1"],"4":["0","1","0","0"],"5":["0","1","0","1"],"6":["0","1","1","0"],"7":["0","1","1","1"],"8":["1","0","0","0"],"9":["1","0","0","1"],"10":["1","0","1","0"],"11":["1","0","1","1"],"12":["1","1","0","0"],"13":["1","1","0","1"],"14":["1","1","1","0"],"15":["1","1","1","1"]};
+var bin2hex = {"0,0,0,0":0,"0,0,0,1":1,"0,0,1,0":2,"0,0,1,1":3,"0,1,0,0":4,"0,1,0,1":5,"0,1,1,0":6,"0,1,1,1":7,"1,0,0,0":8,"1,0,0,1":9,"1,0,1,0":10,"1,0,1,1":11,"1,1,0,0":12,"1,1,0,1":13,"1,1,1,0":14,"1,1,1,1":15};
 
 //HELPERS
 //taken from https://codereview.stackexchange.com/questions/92966/multiplying-and-adding-big-numbers-represented-with-strings
@@ -177,6 +178,12 @@ function pow(a, b) {
     return (b === 0 ? "1" : multiply(pow(a, b - 1), a));
 }
 
+function from_v(v) {
+    var result = new Int64(0);
+    result.v = v;
+    return result;
+}
+
 //Converts number to hex
 function toHex(v) {
     var result = new Array(15);
@@ -210,11 +217,7 @@ function Int64(v = "0") {
     }
 }
 
-Int64.from_v = function (v) {
-    var result = new Int64(0);
-    result.v = v;
-    return result;
-}
+
 
 /**
  * Addition.
@@ -223,23 +226,26 @@ Int64.from_v = function (v) {
 Int64.prototype.add = function (other) {
     other = new Int64(other);
 
-    var a = this.v;
-    var b = other.v;
-
+    var a = this.v.reverse().slice(0);
+    var b = other.v.reverse().slice(0);
     var result = [];
-    var carry = 0;
-    for (var i = 0; i < a.length; i++) {
-        var place = a.length - i - 1;
-        var digisum = a[place] + b[place] + carry;
-        if (digisum >= 16)
-            carry = Math.floor(digisum / 16);
-        else
-            carry = "0";
 
-        result.unshift(digisum % 16);
+    for (var i = 0; (a[i] >= 0) || (b[i] >= 0); i++) {
+        var sum = (parseInt(a[i]) || 0) + (parseInt(b[i]) || 0);
+
+        if (!result[i]) {
+            result[i] = 0;
+        }
+
+        var next = parseInt((result[i] + sum) / 16);
+        result[i] = (result[i] + sum) % 16;
+
+        if (next) {
+            result[i + 1] = next;
+        }
     }
 
-    return Int64.from_v(result);
+    return from_v(result.reverse().slice(-16));
 }
 
 /**
@@ -247,8 +253,25 @@ Int64.prototype.add = function (other) {
  */
 Int64.prototype.neg = function () {
     return new Int64(
-        Int64.from_v(this.v.map((hex_digit, i) => (i === this.v.length - 1 ? 16 - hex_digit : 16 - hex_digit - 1))).toUnsignedString()
+        from_v(this.v.map((hex_digit, i) => (i === this.v.length - 1
+            ? 16 - hex_digit
+            : 16 - hex_digit - 1))).toUnsignedString()
     );
+}
+
+/**
+ * Returns the absolute value of method.
+ */
+Int64.prototype.abs = function () {
+    return this.isNegative() ? this.neg() : this;
+}
+
+/**
+ * Returns an integer that indicates the sign of the number.
+ */
+Int64.prototype.sign = function() { 
+    if(this.toNumber() === 0) { return new Int64(1); }   
+    return this.div(this.abs());
 }
 
 /**
@@ -279,30 +302,173 @@ Int64.prototype.mul = function (other) {
         var a = this.v.reverse();
         var b = other.v.reverse();
         var result = [];
-    
+
         for (var i = 0; a[i] >= 0; i++) {
             for (var j = 0; b[j] >= 0; j++) {
                 if (!result[i + j]) {
                     result[i + j] = 0;
                 }
-    
+
                 result[i + j] += a[i] * b[j];
             }
         }
-    
+
         for (var i = 0; result[i] >= 0; i++) {
             if (result[i] >= 16) {
                 if (!result[i + 1]) {
                     result[i + 1] = 0;
                 }
-    
+
                 result[i + 1] += parseInt(result[i] / 16);
                 result[i] %= 16;
             }
         }
-    
-        return Int64.from_v(result.reverse().slice(-16));
+
+        return from_v(result.reverse().slice(-16));
     }
+}
+
+/**
+ * Integer division.
+ * @param {string|number|Int64} other 
+ */
+Int64.prototype.div = function(other) {
+    other = new Int64(other);
+    if (this.isNegative() && other.isNegative()) {   //Deal with negatives
+        return this.neg().div(other.neg());
+    } else if (this.isNegative() && other.isPositive()) {
+        //special case: this is floor division, not trunc division, 
+        //so we need to subtract 1 from result if there is a remainder
+        var t = this.neg().div(other).neg();
+        var rem = this.neg().sub(t.mul(other.neg()));
+        
+        if(rem.toNumber() === 0) {
+            return t;
+        } else {
+            return t.sub(1);
+        }
+    } else if (this.isPositive() && other.isNegative()) {
+        //special case almost exactly same as above
+        var t = this.div(other.neg()).neg();
+        // console.log("ooo!",t);
+        var rem = this.neg().sub(t.mul(other.neg()));
+        // console.log(t.toString(),rem.toString());
+        if(rem.toNumber() === 0) {
+            return t;
+        } else {
+           return t.sub(1);
+        }
+    } else if (other.toNumber() === 0) { //edge case
+        throw new Error("division by zero");
+    } else { 
+    var n = this.v, d = other.toNumber();
+    var num = n,
+        numLength = num.length,
+        remainder = 0,
+        answer = [],
+        i = 0;
+
+    while( i < numLength){
+        var digit = parseInt(num[i]);
+
+        answer.push(Math.floor((digit + (remainder * 16))/d));
+        remainder = (digit + (remainder * 16))%d;
+        i++;
+    }
+
+    return from_v(answer);
+}
+
+}
+
+/**
+ * Returns the division remainder.
+ * @param {string|number|Int64} other
+ */
+Int64.prototype.mod = function(other) {
+    other = new Int64(other);
+    if (other.toNumber() === 0) return new Int64(0);
+    if (this.sign()*other.sign()===-1) return this.abs().mod(other.abs()).neg();
+    if (this.sign()===-1) return this.abs().mod(other.abs());
+
+    return this.sub(this.div(other).mul(other));
+}
+
+/**
+ * Applies bitwise AND.
+ * @param {string|number|Int64} other 
+ */
+Int64.prototype.and = function(other) {
+    other = new Int64(other);
+    var two = new Int64(2);
+    var bin1 = [].concat.apply([],this.v.map((e) => hex2bin[e]));
+    var bin2 = [].concat.apply([],other.v.map((e) => hex2bin[e]));
+    var bin3 = bin1.map((_,idx) => bin1[idx] & bin2[idx]);
+
+    var result = new Int64(0);
+    for(var i = 0; i < bin3.length; i++) {
+        if(bin3[i]) { result = result.add(two.pow(bin3.length-i-1)); }
+    }
+
+    return result;
+}
+
+
+/**
+ * Applies bitwise OR.
+ * @param {string|number|Int64} other 
+ */
+ Int64.prototype.or = function(other) {
+    other = new Int64(other);
+    var two = new Int64(2);
+    var bin1 = [].concat.apply([],this.v.map((e) => hex2bin[e]));
+    var bin2 = [].concat.apply([],other.v.map((e) => hex2bin[e]));
+    var bin3 = bin1.map((_,idx) => bin1[idx] | bin2[idx]);
+
+    var result = new Int64(0);
+    for(var i = 0; i < bin3.length; i++) {
+        if(bin3[i]) { result = result.add(two.pow(bin3.length-i-1)); }
+    }
+
+    return result;
+}
+
+
+/**
+ * Applies bitwise XOR.
+ * @param {string|number|Int64} other 
+ */
+ Int64.prototype.xor = function(other) {
+    other = new Int64(other);
+    var two = new Int64(2);
+    var bin1 = [].concat.apply([],this.v.map((e) => hex2bin[e]));
+    var bin2 = [].concat.apply([],other.v.map((e) => hex2bin[e]));
+    var bin3 = bin1.map((_,idx) => bin1[idx] ^ bin2[idx]);
+
+    var result = new Int64(0);
+    for(var i = 0; i < bin3.length; i++) {
+        if(bin3[i]) { result = result.add(two.pow(bin3.length-i-1)); }
+    }
+
+    return result;
+}
+
+
+
+
+/**
+ * Exponentiation.
+ * @param {string|number} exponent
+ */
+Int64.prototype.pow = function(exponent) {
+    exponent = parseInt(exponent);
+    if(exponent < 0) throw new Error("no negative exponents");
+    var result = new Int64(1);
+    for(var i = 0; i < exponent; i++) {
+        result = result.mul(this);
+    }
+
+    return result;
 }
 
 /**
@@ -317,6 +483,22 @@ Int64.prototype.isNegative = function () {
  */
 Int64.prototype.isPositive = function () {
     return !this.isNegative();
+}
+
+/**
+ * Returns whether number is less than other.
+ * @param {Int64} other 
+ */
+Int64.prototype.lt = function (other) {
+    other = new Int64(other);
+    if(this.isNegative() && other.isNegative()) return !this.neg().lt(other.neg())
+    if(this.isNegative() && other.isPositive()) return true
+    if(this.isPositive() && other.isNegative()) return false
+
+    var a = this.v.map((e) => "0123456789abcdef".charAt(e)).join("");
+    var b = other.v.map((e) => "0123456789abcdef".charAt(e)).join("");
+
+    return a.localeCompare(b) === -1;
 }
 
 /**
@@ -353,5 +535,15 @@ Int64.prototype.toUnsignedString = function () {
     return result;
 }
 
+Int64.MIN_VALUE = new Int64("-9223372036854775808");
+Int64.MAX_VALUE = new Int64("9223372036854775807");
+
+
+//Alias.
+Int64.prototype.plus = Int64.prototype.add;
+Int64.prototype.minus = Int64.prototype.subtract = Int64.prototype.sub;
+Int64.prototype.multiply = Int64.prototype.times = Int64.prototype.mul;
+Int64.prototype.divide = Int64.prototype.div;
+Int64.prototype.modular = Int64.prototype.mod;
 
 module.exports = Int64;
