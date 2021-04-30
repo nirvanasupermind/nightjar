@@ -1,0 +1,48 @@
+{
+  "name": "nightjar",
+  "version": "0.1.0",
+  "description": "Numerical analysis and number theory library for Node.js",
+  "main": "src/nightjar.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nirvanasupermind/nightjar.git"
+  },
+  "keywords": [
+    "ndarray",
+    "array",
+    "multi",
+    "multidimensional",
+    "dimension",
+    "higher",
+    "image",
+    "volume",
+    "webgl",
+    "tensor",
+    "matrix",
+    "linear",
+    "algebra",
+    "science",
+    "numerical",
+    "computing",
+    "stride",
+    "shape",
+    "numpy",
+    "integer",
+    "64-bit",
+    "64bit",
+    "32-bit",
+    "32bit",
+    "int",
+    "overflow",
+    "native"
+  ],
+  "author": "nirvanasupermind",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nirvanasupermind/nightjar/issues"
+  },
+  "homepage": "https://github.com/nirvanasupermind/nightjar#readme"
+}

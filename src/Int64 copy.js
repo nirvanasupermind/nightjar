@@ -270,7 +270,7 @@ Int64.prototype.abs = function () {
  * Returns an integer that indicates the sign of the number.
  */
 Int64.prototype.sign = function() { 
-    if(this.toNumber() === 0) { return new Int64(1); }   
+    if(this.cmp(0) === 0) { return new Int64(1); }   
     return this.div(this.abs());
 }
 
@@ -295,7 +295,7 @@ Int64.prototype.mul = function (other) {
         return this.neg().mul(other).neg();
     } else if (this.isPositive() && other.isNegative()) {
         return this.mul(other.neg()).neg();
-    } else if (this.toNumber() === 0 || other.toNumber() === 0) { //Zero
+    } else if (this.cmp(0) === 0 || other.cmp(0) === 0) { //Zero
         return new Int64(0);
     } else { //Main body
         //TODO: optimize this
@@ -342,7 +342,7 @@ Int64.prototype.div = function(other) {
         var t = this.neg().div(other).neg();
         var rem = this.neg().sub(t.mul(other.neg()));
         
-        if(rem.toNumber() === 0) {
+        if(rem.cmp(0) === 0) {
             return t;
         } else {
             return t.sub(1);
@@ -353,12 +353,12 @@ Int64.prototype.div = function(other) {
         // console.log("ooo!",t);
         var rem = this.neg().sub(t.mul(other.neg()));
         // console.log(t.toString(),rem.toString());
-        if(rem.toNumber() === 0) {
+        if(rem.cmp(0) === 0) {
             return t;
         } else {
            return t.sub(1);
         }
-    } else if (other.toNumber() === 0) { //edge case
+    } else if (other.cmp(0) === 0) { //edge case
         throw new Error("division by zero");
     } else { 
     var n = this.v, d = other.toNumber();
@@ -387,7 +387,7 @@ Int64.prototype.div = function(other) {
  */
 Int64.prototype.mod = function(other) {
     other = new Int64(other);
-    if (other.toNumber() === 0) return new Int64(0);
+    if (other.cmp(0) === 0) return new Int64(0);
     if (this.sign()*other.sign()===-1) return this.abs().mod(other.abs()).neg();
     if (this.sign()===-1) return this.abs().mod(other.abs());
 
@@ -486,20 +486,25 @@ Int64.prototype.isPositive = function () {
 }
 
 /**
- * Returns whether number is less than other.
+ * Compares two numbers, returns 1 if greater, 0 if equal, and -1 if less than.
  * @param {Int64} other 
  */
-Int64.prototype.lt = function (other) {
+Int64.prototype.cmp = function(other) {
     other = new Int64(other);
-    if(this.isNegative() && other.isNegative()) return !this.neg().lt(other.neg())
-    if(this.isNegative() && other.isPositive()) return true
-    if(this.isPositive() && other.isNegative()) return false
+    if(this.isNegative() && other.isNegative()) return -(this.neg().cmp(other.neg()));
+    if(this.isNegative() && other.isPositive()) return -1;
+    if(this.isPositive() && other.isNegative()) return 1;
 
     var a = this.v.map((e) => "0123456789abcdef".charAt(e)).join("");
     var b = other.v.map((e) => "0123456789abcdef".charAt(e)).join("");
 
-    return a.localeCompare(b) === -1;
+    return a.localeCompare(b);
 }
+
+/**
+ * Create a clone of the number.
+ */
+Int64.prototype.clone = function() { return from_v(this.v.slice()); }
 
 /**
  * Converts the number into Number.
@@ -541,9 +546,12 @@ Int64.MAX_VALUE = new Int64("9223372036854775807");
 
 //Alias.
 Int64.prototype.plus = Int64.prototype.add;
+Int64.prototype.negate = Int64.prototype.neg;
+Int64.prototype.absoluteValue = Int64.prototype.abs;
 Int64.prototype.minus = Int64.prototype.subtract = Int64.prototype.sub;
 Int64.prototype.multiply = Int64.prototype.times = Int64.prototype.mul;
 Int64.prototype.divide = Int64.prototype.div;
 Int64.prototype.modular = Int64.prototype.mod;
+Int64.prototype.compareTo = Int64.prototype.compare = Int64.prototype.cmp;
 
 module.exports = Int64;

@@ -9,9 +9,9 @@ function get_performance(task) {
     var b = Date.now();
     return b-a;
 }
-
 function main() {
-    console.log(nightjar.Tensor([[1,2,3],[4,5,6]]));
+   var times = 1e5;
+   console.log(nightjar.Int64(189).modular(5).toNumber());
 }
 
 main();

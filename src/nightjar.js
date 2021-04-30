@@ -1,13 +1,14 @@
 //nightjar Library
 //Usage permitted under terms of MIT License
 
-var Int64 = require("./Int64.js");
-var Tensor = require("./Tensor.js");
+var ints = require("./ints.js");
+var NdArray = require("./NdArray.js");
 
 //the nightjar module
 var nightjar = new function () {
-    this.Int64 = Int64;
-    this.Tensor = Tensor;
+    this.Int32 = ints.Int32;
+    this.Int64 = ints.Int64;
+    this.NdArray = NdArray;
 }
 
 module.exports = nightjar;
