@@ -10,8 +10,8 @@ function get_performance(task) {
     return b-a;
 }
 function main() {
-   var times = 1e5;
-   console.log(nightjar.Int64(189).modular(5).toNumber());
+   var a = nightjar.random.random([2]);
+   console.log(a.toString());
 }
 
 main();

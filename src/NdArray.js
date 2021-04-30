@@ -1,5 +1,7 @@
 var assert = require("assert");
-var MAX = 40;
+const { on } = require("events");
+var MAX = 30;
+var tmp = 3;
 //HELPERS
 Object.defineProperty(Array.prototype, 'eachConsecutive', {
     value: function (n) {
@@ -107,28 +109,47 @@ function printf(v) {
     if (v instanceof Array) v = new NdArray(v);
     var data = v.data, shape = v.shape;
     if (shape.length === 1) {
-        if (data.length > MAX*2/3) {
-            return "{" + data.slice(0, MAX).join(", ") + "..." + "}";
+        if (data.length > MAX) {
+            var t = printf(data.slice(0,MAX));
+            return t.slice(0,-1) + "...}";
+        } /* else if(data.length > MAX*2/3) {
+            var result = "{\n";
+            for(var i = 0; i < data.length; i++) {
+                if(i === data.length-1) 
+                    result += "  "+data[i].toFixed(prec).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/,'$1')+"\n";
+                else
+                    result += "  "+data[i].toFixed(prec).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/,'$1')+",\n";
+            }
+
+            result += "}";
+            return result;
+        } */ else {
+            if(data.length < tmp*3) { return "{"+data.join(", ")+"}"; }
+         var result = "{"+data.slice(0,tmp-1).join(", ");
+         for(var i = tmp; i < data.length; i += tmp) {
+             result += ",\n "+data.slice(i,i+tmp-1).join(", ");
+         }
+
+         result += "}";
+
+         return result;
         }
-        return "{" + data.join(", ") + "}";
     } else {
-        var result = "{\n";
         var arr = v.toArray();
         if(arr.length === 1) return "{"+printf(arr[0])+"}";
-        for (var i = 0; i < arr.length; i++) {
-            if (i > MAX) {
-                result += "  ...\n"; break;
+        if(arr.length > MAX) return printf(arr.slice(0,MAX)).slice(0,-2)+",\n  ...\n}";
+        var result = "{\n"+indent(printf(arr[0]), "  ");
+        for(var i = 1; i < arr.length; i++) {
+            var t = indent(printf(arr[i]), "  ");
+            if(t.length > MAX*3) {
+                result += ",\n\n"+indent(printf(arr[i]), "  ");
             } else {
-                if (i === shape[0] - 1) {
-                    result += indent(printf(arr[i]), "  ") + "\n";
-                } else {
-                    result += indent(printf(arr[i]), "  ") + ",\n";
-                }
+            result += ",\n"+indent(printf(arr[i]), "  ");
             }
         }
 
-        result += "}";
-        return textFold(result,MAX*2);
+        result += "\n}";
+        return result;
     }
 }
 
@@ -199,7 +220,7 @@ NdArray.prototype.sub = function (other) {
  * Returns the product of `this` and `other`, element-wise.
  * @param {Array|NdArray} other 
  */
- NdArray.prototype.mul = function (other) {
+NdArray.prototype.mul = function (other) {
     other = new NdArray(other);
     return new NdArray(bin_op((a, b) => a * b, this.data, other.data), this.shape);
 }
@@ -249,7 +270,7 @@ NdArray.prototype.atan = function () {
 
 /**
  * Element-wise arc tangent of `this/other`.
- * @param {string|number|NdArray} other 
+ * @param {Array|NdArray} other 
  */
 NdArray.prototype.atan2 = function (other) {
     other = new NdArray(other);
@@ -270,6 +291,24 @@ NdArray.prototype.exp = function () {
 NdArray.prototype.log = function () {
     return new NdArray(this.data.map(Math.log), this.shape);
 }
+
+
+/**
+ * Applies square root, element-wise.
+ */ 
+NdArray.prototype.sqrt = function () {
+    return new NdArray(this.data.map(Math.sqrt), this.shape);
+}
+
+/**
+ * First array elements raised to powers from second array, element-wise.
+ * @param {Array|NdArray} other
+ */
+NdArray.prototype.pow = function (other) {
+    other = new NdArray(other);
+    return new NdArray(bin_op(Math.pow, this.data, other.data), this.shape); 
+}
+
 
 /**
  * Converts the array into Array.
@@ -311,6 +350,26 @@ NdArray.prototype.toString = function () {
 }
 
 
+/**
+ * Returns the product of `this` and `other`, element-wise.
+ * @param {Array|NdArray} other 
+ */
+NdArray.prototype.mul = function (other) {
+    other = new NdArray(other);
+    return new NdArray(bin_op((a, b) => a * b, this.data, other.data), this.shape);
+}
+
+/**
+ * Returns the scalar product of `this` and `other`.
+ * @param {string|number} other 
+ */
+NdArray.prototype.scalar = function (other) {
+    other = parseFloat(other);
+    return new NdArray(this.data.map((el) => other*el), this.shape);
+}
+
+
+
 //Alias.
 NdArray.prototype.plus = NdArray.prototype.add;
 NdArray.prototype.minus = NdArray.prototype.subtract = NdArray.prototype.sub;
@@ -319,8 +378,10 @@ NdArray.prototype.divide = NdArray.prototype.div;
 NdArray.prototype.modular = NdArray.prototype.mod;
 NdArray.prototype.arcsin = NdArray.prototype.asin;
 NdArray.prototype.arccos = NdArray.prototype.acos;
+NdArray.prototype.arctan = NdArray.prototype.atan;
 NdArray.prototype.exponential = NdArray.prototype.exp;
 NdArray.prototype.ln = NdArray.prototype.log;
-
+NdArray.prototype.squareRoot = NdArray.prototype.sqrt;
+NdArray.prototype.toPower = NdArray.prototype.power = NdArray.prototype.pow;
 
 module.exports = NdArray;
