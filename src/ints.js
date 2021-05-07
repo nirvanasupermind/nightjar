@@ -204,7 +204,7 @@ function createInt(bits) {
 
     function from_v(v) {
         var result = Object.create(BaseInt.prototype);
-        result.v = v.slice(-64);
+        result.v = v.slice(-bits);
         return result;
     }
 
