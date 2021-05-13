@@ -305,6 +305,7 @@ function createInt(bits) {
      */
     BaseInt.prototype.mul = function (other) {
         other = new BaseInt(other);
+        var old_this = JSON.parse(JSON.stringify(this));
 
         if (this.toNumber() === 0 || other.toNumber() === 0) return new BaseInt(0);
         if (this.isNegative() && other.isPositive()) return this.neg().mul(other).neg();
@@ -336,6 +337,7 @@ function createInt(bits) {
             }
         }
 
+        Object.assign(this, old_this);
         return from_v(result.reverse().map(Boolean));
     }
 
