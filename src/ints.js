@@ -313,7 +313,7 @@ function createInt(bits) {
         if (this.isNegative() && other.isNegative()) return this.neg().mul(other.neg());
         if (this.isPositive() && other.isNegative()) return this.mul(other.neg()).neg();
 
-        var a = this.v.reverse().map(Number), b = other.v.reverse().map(Number);
+        var a = this.v.slice().reverse().map(Number), b = other.v.slice().reverse().map(Number);
 
         var result = [];
 
