@@ -490,6 +490,7 @@ function createInt(bits) {
     }
 
     BaseInt.prototype.cmp = function (other) {
+        other = new BaseInt(other);
         return this.v.join("").localeCompare(other.v.join(""));
     }
 
