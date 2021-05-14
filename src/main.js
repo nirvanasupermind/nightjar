@@ -10,7 +10,7 @@ function get_performance(task) {
     return b-a;
 }
 function main() {
-   var a = nightjar.random.random([2]);
+   var a = nightjar.Int64(2).cmp(nightjar.Int64(80));
    console.log(a.toString());
 }
 
