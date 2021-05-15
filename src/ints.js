@@ -491,6 +491,9 @@ function createInt(bits) {
 
     BaseInt.prototype.cmp = function (other) {
         other = new BaseInt(other);
+        if(this.isPositive() && other.isNegative()) return 1;
+        if(this.isNegative() && other.isNegative()) return -(this.neg().cmp(othr.neg()));
+        if(this.isNegative() && other.isPositive()) return -1;
         return this.v.join("").localeCompare(other.v.join(""));
     }
 
