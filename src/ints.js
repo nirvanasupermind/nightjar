@@ -321,7 +321,7 @@ function createInt(bits) {
      * Returns the negated value.
      */
     BaseInt.prototype.neg = function () {
-        return this.add(BaseInt.MAX_VALUE);
+        return this.add(BaseInt.MAX_VALUE).add(-2);
     }
 
     /**
