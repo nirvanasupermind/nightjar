@@ -321,7 +321,7 @@ function createInt(bits) {
      * Returns the negated value.
      */
     BaseInt.prototype.neg = function () {
-        if(this.cmp(BaseInt.MIN_VALUE) === 0) {
+        if(this.v.toString() === BaseInt.MIN_VALUE.toString()) {
             return new BaseInt(0);
         }
 
