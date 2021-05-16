@@ -491,7 +491,7 @@ function createInt(bits) {
      * Converts the number into String.
      */
     BaseInt.prototype.toString = function () {
-        if (     if(JSON.stringify(this) === JSON.stringify(BaseInt.MIN_VALUE))
+        if(JSON.stringify(this) === JSON.stringify(BaseInt.MIN_VALUE))
             return "-" + pow("2", bits - 1)
         if (this.isNegative()) return "-" + this.neg();
         var result = "0";
