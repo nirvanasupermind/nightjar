@@ -321,7 +321,7 @@ function createInt(bits) {
      * Returns the negated value.
      */
     BaseInt.prototype.neg = function () {
-        return from_v(this.v.map((bit) => !bit)).add(1);
+        return this.add(BaseInt.MAX_VALUE);
     }
 
     /**
@@ -473,6 +473,15 @@ function createInt(bits) {
         return result;
     }
 
+    BaseInt.prototype.cmp = function (other) {
+        other = new BaseInt(other);
+        if(this.isPositive() && other.isNegative()) return 1;
+        if(this.isNegative() && other.isNegative()) return -(this.neg().cmp(othr.neg()));
+        if(this.isNegative() && other.isPositive()) return -1;
+        return this.v.join("").localeCompare(other.v.join(""));
+    }
+
+
 
     /**
      * Converts the number into String.
@@ -487,14 +496,6 @@ function createInt(bits) {
         }
 
         return result;
-    }
-
-    BaseInt.prototype.cmp = function (other) {
-        other = new BaseInt(other);
-        if(this.isPositive() && other.isNegative()) return 1;
-        if(this.isNegative() && other.isNegative()) return -(this.neg().cmp(othr.neg()));
-        if(this.isNegative() && other.isPositive()) return -1;
-        return this.v.join("").localeCompare(other.v.join(""));
     }
 
     BaseInt.MIN_VALUE = new BaseInt(add(pow("2", bits - 1), "1"));
