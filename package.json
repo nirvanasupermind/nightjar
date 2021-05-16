@@ -1,6 +1,6 @@
 {
   "name": "nightjar",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Numerical analysis and number theory library for Node.js",
   "main": "src/nightjar.js",
   "scripts": {
